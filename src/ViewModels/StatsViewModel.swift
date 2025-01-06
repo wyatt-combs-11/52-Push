@@ -14,6 +14,10 @@ class StatsViewModel: ObservableObject {
     private let persistence = PersistenceService.shared
 
     init() {
-        self.totalPushups = persistence.loadStats()
+        self.totalPushups = persistence.getStats().lifetimePushups
+    }
+    
+    func updateTotalPushups() {
+        self.totalPushups = persistence.getStats().lifetimePushups
     }
 }

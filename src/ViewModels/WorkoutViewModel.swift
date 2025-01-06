@@ -10,17 +10,17 @@ import Foundation
 
 class WorkoutViewModel: ObservableObject {
     @Published var deck: [Card] = []
+    @Published var cardHistory: [[Card]] = []
     @Published var currentCards: [Card] = []
-    @Published var pushupsCompleted: Int = 0
     @Published var currentWorkoutPushups: Int = 0
+    @Published var currentRoundPushups: Int = 0
 
     private let persistence = PersistenceService.shared
-    private let settings: Settings
 
     init() {
-        self.settings = persistence.loadSettings()
-        self.pushupsCompleted = persistence.loadStats()
+        self.currentWorkoutPushups = persistence.getStats().currentWorkoutPushups
         self.deck = persistence.loadDeck()
+        self.cardHistory = persistence.loadCardHistory()
         if deck.isEmpty {
             shuffleDeck()
         }
@@ -39,35 +39,59 @@ class WorkoutViewModel: ObservableObject {
             }
         }
 
-        if settings.includeJokers {
+        if persistence.getSettings().includeJokers {
             cards.append(Card(value: 50, suit: "joker", imageName: "black_joker"))
             cards.append(Card(value: 50, suit: "joker", imageName: "red_joker"))
         }
+        
+        deck = cards.shuffled()
 
-        if settings.aceLast {
-            let aceCards = cards.filter { $0.value == 25 }
-            cards.removeAll { $0.value == 25 }
-            cards.append(contentsOf: aceCards)
+        if persistence.getSettings().aceLast, let firstAceCardIndex = deck.firstIndex(where: { $0.value == 25 }) {
+            let firstAceCard = deck[firstAceCardIndex]
+            deck.remove(at: firstAceCardIndex)
+            deck = deck.shuffled()
+            // add first ace to beginning of deck
+            deck.insert(firstAceCard, at: 0)
         }
 
-        deck = cards.shuffled()
+        var currentStats = persistence.getStats()
+        currentStats.currentWorkoutPushups = 0
+        self.currentRoundPushups = 0
+        self.currentWorkoutPushups = 0
+        self.cardHistory = []
+        self.currentCards = []
+        
         persistence.saveDeck(deck)
+        persistence.saveCardHistory([[]])
+        persistence.saveStats(currentStats)
     }
 
 
-    func drawCard() {
-        currentCards.removeAll()
+    func drawCard(){
+        var currentCards: [Card] = []
+//        cardHistory.append(currentCards)
+//        currentCards.removeAll()
+        var currentRoundPushups = 0
 
         guard !deck.isEmpty else { return }
-        let count = settings.gambleMode ? 2 : 1
+        let count = persistence.getSettings().gambleMode ? 2 : 1
         for _ in 0..<count {
             if let card = deck.popLast() {
                 currentCards.append(card)
-                currentWorkoutPushups += card.value
-                pushupsCompleted += card.value
+                currentRoundPushups += card.value
             }
         }
+        
+        var currentStats = persistence.getStats()
+        currentStats.currentWorkoutPushups = currentStats.currentWorkoutPushups + currentRoundPushups
+        currentStats.lifetimePushups = currentStats.lifetimePushups + currentRoundPushups
+        self.currentWorkoutPushups = currentStats.currentWorkoutPushups
+        self.currentRoundPushups = currentRoundPushups
+        
+        cardHistory.append(currentCards)
+        
         persistence.saveDeck(deck)
-        persistence.saveStats(pushupsCompleted)
+        persistence.saveCardHistory(cardHistory)
+        persistence.saveStats(currentStats)
     }
 }

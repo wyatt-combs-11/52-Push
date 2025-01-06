@@ -24,7 +24,7 @@ struct CardView: View {
                 .scaledToFit()
                 .padding(5) // Padding to avoid touching the border
         }
-        .frame(width: 100, height: 150) // Standard card dimensions
+        .frame(width: 150, height: 225) // Standard card dimensions
         .overlay(
             RoundedRectangle(cornerRadius: 10)
                 .stroke(Color.black, lineWidth: 1) // Black border

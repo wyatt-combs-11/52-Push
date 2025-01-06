@@ -13,5 +13,6 @@ struct Card: Identifiable, Codable {
     let value: Int
     let suit: String
     let imageName: String
-    var rotationAngle: Double = Double.random(in: -10...10)
+    var rotationAngle: Double = Double.random(in: -30...30)
+    var offset: CGSize = CGSize(width: Int.random(in: -20...20), height: Int.random(in: -20...20))
 }

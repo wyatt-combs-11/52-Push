@@ -9,17 +9,18 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject private var viewModel = SettingsViewModel()
+    @ObservedObject var settingsViewModel: SettingsViewModel
 
     var body: some View {
         Form {
-            Toggle("Ace Last", isOn: $viewModel.settings.aceLast)
-            Toggle("Include Jokers", isOn: $viewModel.settings.includeJokers)
-            Toggle("Gamble Mode", isOn: $viewModel.settings.gambleMode)
+            Toggle("Dark Mode", isOn: $settingsViewModel.settings.darkMode)
+            Toggle("Ace Last", isOn: $settingsViewModel.settings.aceLast)
+            Toggle("Include Jokers", isOn: $settingsViewModel.settings.includeJokers)
+            Toggle("Gamble Mode", isOn: $settingsViewModel.settings.gambleMode)
         }
         .navigationTitle("Settings")
         .onDisappear {
-            viewModel.saveSettings()
+            settingsViewModel.saveSettings()
         }
     }
 }

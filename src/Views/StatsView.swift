@@ -18,5 +18,8 @@ struct StatsView: View {
             Spacer()
         }
         .padding()
+        .onAppear {
+            viewModel.updateTotalPushups()
+        }
     }
 }

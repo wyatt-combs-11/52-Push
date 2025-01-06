@@ -9,6 +9,7 @@
 import Foundation
 
 struct Settings: Codable {
+    var darkMode: Bool
     var aceLast: Bool
     var includeJokers: Bool
     var gambleMode: Bool

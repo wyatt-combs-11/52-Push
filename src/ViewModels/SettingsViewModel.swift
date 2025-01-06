@@ -13,7 +13,7 @@ class SettingsViewModel: ObservableObject {
     private let persistence = PersistenceService.shared
 
     init() {
-        self.settings = persistence.loadSettings()
+        self.settings = persistence.getSettings()
     }
 
     func saveSettings() {

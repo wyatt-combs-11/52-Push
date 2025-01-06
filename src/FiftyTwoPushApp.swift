@@ -9,10 +9,12 @@ import SwiftUI
 
 @main
 struct FiftyTwoPushApp: App {
+    @StateObject var settingsViewModel = SettingsViewModel()
+    
     var body: some Scene {
         WindowGroup {
             TabView {
-                WorkoutView(viewModel: WorkoutViewModel())
+                WorkoutView(viewModel: WorkoutViewModel(), settingsViewModel: settingsViewModel)
                     .tabItem {
                         Label("Workout", systemImage: "flame.fill")
                     }
@@ -23,7 +25,7 @@ struct FiftyTwoPushApp: App {
                     }
 
                 NavigationView {
-                    SettingsView()
+                    SettingsView(settingsViewModel: settingsViewModel)
                 }
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
