@@ -16,7 +16,7 @@ class PersistenceService {
     private let cardHistoryKey = "cardHistoryKey"
     private let settingsKey = "settingsKey"
     private var stats: Stats = Stats(lifetimePushups: 0, currentWorkoutPushups: 0)
-    private var settings: Settings = Settings(darkMode: false, aceLast: false, includeJokers: false, gambleMode: false)
+    private var settings: Settings = Settings(darkMode: false, aceLast: false, includeJokers: false, gambleMode: false, liteMode: false)
     
     init() {
         self.loadStats()

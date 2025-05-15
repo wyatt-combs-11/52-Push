@@ -11,6 +11,7 @@ import Foundation
 struct Card: Identifiable, Codable {
     var id = UUID()
     let value: Int
+    let number: Int
     let suit: String
     let imageName: String
     var rotationAngle: Double = Double.random(in: -30...30)

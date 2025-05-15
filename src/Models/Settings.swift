@@ -13,4 +13,5 @@ struct Settings: Codable {
     var aceLast: Bool
     var includeJokers: Bool
     var gambleMode: Bool
+    var liteMode: Bool
 }

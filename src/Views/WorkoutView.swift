@@ -11,10 +11,14 @@ import SwiftUI
 struct WorkoutView: View {
     @ObservedObject var viewModel: WorkoutViewModel
     @ObservedObject var settingsViewModel: SettingsViewModel
-    @State private var isAnimating = false
+    @State private var cardIsAnimating = false
+    @State private var messageIsAnimating = false
     @State private var visibleCards: [Card] = []
     @State private var dealLeft = false
-    // computed property for text color
+    @State private var overlayMessage: String = ""
+    @State private var showMessage = false
+    @State private var overlayRotation: Double = 0
+
     var textColor: Color {
         settingsViewModel.settings.darkMode ? Color.white : Color.black
     }
@@ -23,20 +27,24 @@ struct WorkoutView: View {
         ZStack {
             LinearGradient(
                 gradient: Gradient(colors: settingsViewModel.settings.darkMode
-                    ? [Color.black, Color.gray]
-                    : [Color.blue.opacity(0.1), Color.white]
+                    ? [Color.black, Color.gray]  // Dark mode colors (fully opaque)
+                    : [Color.white, Color.blue]  // Light mode colors (fully opaque)
                 ),
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
             
+            Rectangle()
+                .fill(Color.black.opacity(0.05))
+                .ignoresSafeArea()
+
             VStack {
                 Spacer()
-                
-                Text("Round Pushups: \(viewModel.currentRoundPushups)").foregroundColor(textColor)
-                    .font(.title).bold()
-                    .padding(.bottom, 5)
+                // Show all pushups for visible cards in a text view
+                Text("Round Pushups: \(visibleCards.map { $0.value }.reduce(0, +))").foregroundColor(textColor)
+                        .font(.title).bold()
+                        .padding(.bottom, 5)
                 Text("Current Pushup Total: \(viewModel.currentWorkoutPushups)").foregroundColor(textColor)
                     .font(.headline)
                 Text("Cards Left: \(viewModel.deck.count)").foregroundColor(textColor)
@@ -62,9 +70,9 @@ struct WorkoutView: View {
                         ForEach(visibleCards) { card in
                             CardView(card: card)
                                 .frame(width: 150, height: 225)
-                                .offset(x: (isAnimating ? 0 : (self.dealLeft ? -1 : 1) * 800) + card.offset.width, y: 0 + card.offset.height)
+                                .offset(x: (cardIsAnimating ? 0 : (self.dealLeft ? -1 : 1) * 800) + card.offset.width, y: 0 + card.offset.height)
                                 .rotationEffect(Angle(degrees: card.rotationAngle))
-                                .animation(.easeOut(duration: 0.5), value: isAnimating)
+                                .animation(.easeOut(duration: 0.5), value: cardIsAnimating)
                         }
                     }
                     .frame(height: 250)
@@ -115,32 +123,72 @@ struct WorkoutView: View {
                 }
                 .padding(.horizontal)
                 
-                
-                
-                
-                
                 Spacer()
             }
+//            .opacity(messageIsAnimating ? 0.25 : 1)
             .onAppear {
-                isAnimating = true
+                cardIsAnimating = true
             }
+            
+            if showMessage {
+                Color.white
+                    .opacity(messageIsAnimating ? 0.8 : 0)
+                    .blur(radius: 8)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                
+                
+                Text(overlayMessage)
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .foregroundColor(.black)
+                    .rotationEffect(Angle(degrees: (messageIsAnimating ? 1 : -1) * overlayRotation))
+                    .scaleEffect(messageIsAnimating ? 1.5 : 0)
+                    .lineLimit(nil)
+                    .frame(maxWidth: UIScreen.main.bounds.width * 0.8)
+                    .multilineTextAlignment(.center)
+                    .transition(.opacity)
+                    .modifier(PulseGlowEffect())  // Apply Pulse and Glow effect here
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            messageIsAnimating.toggle() // Start scaling and fading in
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                messageIsAnimating.toggle() // Fade out and shrink
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                showMessage = false // Remove message
+                            }
+                        }
+                    }
+            }
+
         }
     }
 
     private func drawNewCard() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             visibleCards = []
-            isAnimating = false
+            cardIsAnimating = false
             
-            viewModel.drawCard()
+            let comboMessage = viewModel.drawCard()
             visibleCards = viewModel.cardHistory.last ?? []
+            
+            if comboMessage != nil {
+                showOverlayMessage(comboMessage!)
+                overlayRotation = Double.random(in: -20...20)
+            }
 
-            // Animate the new card(s) into view
             withAnimation {
-                isAnimating = true
+                cardIsAnimating = true
             }
         }
         self.dealLeft.toggle()
+    }
+    
+    private func showOverlayMessage(_ message: String) {
+        overlayMessage = message
+        showMessage = true
     }
     
     private func shuffleDeck() {

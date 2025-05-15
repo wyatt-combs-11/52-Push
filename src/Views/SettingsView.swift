@@ -17,6 +17,7 @@ struct SettingsView: View {
             Toggle("Ace Last", isOn: $settingsViewModel.settings.aceLast)
             Toggle("Include Jokers", isOn: $settingsViewModel.settings.includeJokers)
             Toggle("Gamble Mode", isOn: $settingsViewModel.settings.gambleMode)
+            Toggle("Lite Mode", isOn: $settingsViewModel.settings.liteMode)
         }
         .navigationTitle("Settings")
         .onDisappear {
