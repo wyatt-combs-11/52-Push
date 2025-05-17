@@ -20,19 +20,13 @@ struct WorkoutView: View {
     @State private var overlayRotation: Double = 0
 
     var textColor: Color {
-        settingsViewModel.settings.darkMode ? Color.white : Color.black
+        settingsViewModel.getTextColor()
     }
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                gradient: Gradient(colors: settingsViewModel.settings.darkMode
-                    ? [Color.black, Color.gray]  // Dark mode colors (fully opaque)
-                    : [Color.white, Color.blue]  // Light mode colors (fully opaque)
-                ),
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            settingsViewModel.getBackgroundGradient()
+            .opacity(1.0)
             .ignoresSafeArea()
             
             Rectangle()

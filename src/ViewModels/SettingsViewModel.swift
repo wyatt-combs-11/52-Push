@@ -7,6 +7,7 @@
 
 
 import Foundation
+import SwiftUI
 
 class SettingsViewModel: ObservableObject {
     @Published var settings: Settings
@@ -18,5 +19,24 @@ class SettingsViewModel: ObservableObject {
 
     func saveSettings() {
         persistence.saveSettings(settings)
+    }
+    
+    func getTextColor() -> Color {
+        return settings.darkMode ? Color.white : Color.black
+    }
+    
+    func getBackgroundColor() -> Color {
+        return settings.darkMode ? Color.black : Color.white
+    }
+    
+    func getBackgroundGradient() -> LinearGradient {
+        return LinearGradient(
+            gradient: Gradient(colors: settings.darkMode
+                ? [Color.black, Color.gray]  // Dark mode colors (fully opaque)
+                : [Color.white, Color.blue]  // Light mode colors (fully opaque)
+            ),
+            startPoint: .top,
+            endPoint: .bottom
+        )
     }
 }
