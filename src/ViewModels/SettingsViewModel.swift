@@ -29,12 +29,9 @@ class SettingsViewModel: ObservableObject {
         return settings.darkMode ? Color.black : Color.white
     }
     
-    func getBackgroundGradient() -> LinearGradient {
+    func getBackgroundGradient(colorTheme: ColorTheme) -> LinearGradient {
         return LinearGradient(
-            gradient: Gradient(colors: settings.darkMode
-                ? [Color.black, Color.gray]  // Dark mode colors (fully opaque)
-                : [Color.white, Color.blue]  // Light mode colors (fully opaque)
-            ),
+            gradient: Gradient(colors: [colorTheme.backgroundGradientTop, colorTheme.backgroundGradientBottom]),
             startPoint: .top,
             endPoint: .bottom
         )

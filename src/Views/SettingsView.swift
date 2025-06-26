@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var settingsViewModel: SettingsViewModel
+    @Environment(\.colorTheme) private var colorTheme
     
     init(settingsViewModel: SettingsViewModel) {
         UITableView.appearance().backgroundColor = .clear
@@ -18,7 +19,7 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            settingsViewModel.getBackgroundGradient()
+            settingsViewModel.getBackgroundGradient(colorTheme: colorTheme)
                 .opacity(1.0)
                 .ignoresSafeArea()
 

@@ -11,6 +11,7 @@ import SwiftUI
 struct WorkoutView: View {
     @ObservedObject var viewModel: WorkoutViewModel
     @ObservedObject var settingsViewModel: SettingsViewModel
+    @Environment(\.colorTheme) var colorTheme
     @State private var cardIsAnimating = false
     @State private var messageIsAnimating = false
     @State private var visibleCards: [Card] = []
@@ -18,35 +19,51 @@ struct WorkoutView: View {
     @State private var overlayMessage: String = ""
     @State private var showMessage = false
     @State private var overlayRotation: Double = 0
+    @State private var showConfetti = false
+    @State private var showCongratulationsModal = false
+    
+    private var statsText: String {
+        "Total Pushups: \(viewModel.currentWorkoutPushups)\nRounds: \(viewModel.cardHistory.count)"
+    }
 
     var textColor: Color {
         settingsViewModel.getTextColor()
     }
+    
+    // Computed property for correct pushup total
+    private var totalPushups: Int {
+        viewModel.cardHistory.last?.map { $0.value }.reduce(0, +) ?? 0
+    }
 
     var body: some View {
         ZStack {
-            settingsViewModel.getBackgroundGradient()
-            .opacity(1.0)
-            .ignoresSafeArea()
+            settingsViewModel.getBackgroundGradient(colorTheme: colorTheme)
+                .opacity(1.0)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
             
             Rectangle()
                 .fill(Color.black.opacity(0.05))
                 .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    drawNewCard()
+                }
 
             VStack {
                 Spacer()
-                // Show all pushups for visible cards in a text view
-                Text("Round Pushups: \(visibleCards.map { $0.value }.reduce(0, +))").foregroundColor(textColor)
-                        .font(.title).bold()
-                        .padding(.bottom, 5)
-                Text("Current Pushup Total: \(viewModel.currentWorkoutPushups)").foregroundColor(textColor)
+                Text("Round Pushups: \(visibleCards.map { $0.value }.reduce(0, +))")
+                    .foregroundColor(textColor)
+                    .font(.title).bold()
+                    .padding(.bottom, 5)
+                Text("Current Pushup Total: \(totalPushups)")
+                    .foregroundColor(textColor)
                     .font(.headline)
-                Text("Cards Left: \(viewModel.deck.count)").foregroundColor(textColor)
+                Text("Cards Left: \(viewModel.deck.count)")
+                    .foregroundColor(textColor)
                     .font(.headline)
                     .padding(.bottom)
-                
                 Spacer()
-                
                 ZStack {
                     ForEach(Array(viewModel.cardHistory.indices.dropLast()), id: \.self) { index in
                         HStack {
@@ -59,7 +76,6 @@ struct WorkoutView: View {
                         }
                         .frame(height: 250)
                     }
-                    
                     HStack {
                         ForEach(visibleCards) { card in
                             CardView(card: card)
@@ -70,33 +86,20 @@ struct WorkoutView: View {
                         }
                     }
                     .frame(height: 250)
-                    
                 }
                 .onAppear {
                     visibleCards = viewModel.cardHistory.last ?? []
                 }
-                
-                Spacer()
-                
-                HStack(spacing: 16) {
-                    Button(action: {
-                        drawNewCard()
-                    }) {
-                        HStack {
-                            Image(systemName: "rectangle.stack.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 24, height: 24) // Standardized icon size
-                            Text("Draw Card")
-                                .fontWeight(.semibold)
+                .gesture(
+                    DragGesture(minimumDistance: 30, coordinateSpace: .local)
+                        .onEnded { value in
+                            if value.translation.width < -30 {
+                                goBackToPreviousCards()
+                            }
                         }
-                        .padding()
-                        .frame(maxWidth: .infinity, minHeight: 50) // Consistent height
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                    }
-                    
+                )
+                Spacer()
+                HStack(spacing: 16) {
                     Button(action: {
                         shuffleDeck()
                     }) {
@@ -104,24 +107,26 @@ struct WorkoutView: View {
                             Image(systemName: "shuffle")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 24, height: 24) // Standardized icon size
+                                .frame(width: 24, height: 24)
                             Text("Shuffle Deck")
                                 .fontWeight(.semibold)
                         }
                         .padding()
-                        .frame(maxWidth: .infinity, minHeight: 50) // Consistent height
+                        .frame(maxWidth: .infinity, minHeight: 50)
                         .background(Color.green)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                     }
                 }
                 .padding(.horizontal)
-                
                 Spacer()
             }
 //            .opacity(messageIsAnimating ? 0.25 : 1)
             .onAppear {
                 cardIsAnimating = true
+            }
+            .onTapGesture {
+                drawNewCard()
             }
             
             if showMessage {
@@ -156,7 +161,22 @@ struct WorkoutView: View {
                         }
                     }
             }
-
+            
+            // Show confetti when triggered
+            if showConfetti {
+                ConfettiView()
+                    .transition(.opacity)
+            }
+            // Show congratulations modal when triggered
+            if showCongratulationsModal {
+                CongratulationsModalView(stats: statsText) {
+                    withAnimation {
+                        showCongratulationsModal = false
+                        showConfetti = false
+                    }
+                }
+                .transition(.opacity)
+            }
         }
     }
 
@@ -164,17 +184,21 @@ struct WorkoutView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             visibleCards = []
             cardIsAnimating = false
-            
             let comboMessage = viewModel.drawCard()
             visibleCards = viewModel.cardHistory.last ?? []
-            
             if comboMessage != nil {
                 showOverlayMessage(comboMessage!)
                 overlayRotation = Double.random(in: -20...20)
             }
-
             withAnimation {
                 cardIsAnimating = true
+            }
+            // Show confetti and modal if deck is finished
+            if viewModel.deck.isEmpty {
+                withAnimation {
+                    showConfetti = true
+                    showCongratulationsModal = true
+                }
             }
         }
         self.dealLeft.toggle()
@@ -189,5 +213,13 @@ struct WorkoutView: View {
         viewModel.shuffleDeck()
         visibleCards = []
     }
+    
+    private func goBackToPreviousCards() {
+        guard viewModel.cardHistory.count >= 1 else { return }
+        // Remove the last drawn cards from history and restore them to the deck in reverse order
+        let lastDrawnCards = viewModel.cardHistory.removeLast()
+        viewModel.deck.append(contentsOf: lastDrawnCards.reversed())
+        visibleCards = viewModel.cardHistory.last ?? []
+        viewModel.currentWorkoutPushups -= lastDrawnCards.map { $0.value }.reduce(0, +)
+    }
 }
-

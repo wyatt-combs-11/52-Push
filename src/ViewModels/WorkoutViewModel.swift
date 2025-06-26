@@ -118,4 +118,14 @@ class WorkoutViewModel: ObservableObject {
         }
         return nil
     }
+    
+    /// Returns the next cards that would be dealt, without modifying the deck or history.
+    func peekNextCards() -> [Card] {
+        let count = persistence.getSettings().gambleMode ? 2 : 1
+        guard !deck.isEmpty else { return [] }
+        // Take the last `count` cards from the deck (since popLast is used in drawCard)
+        let end = deck.endIndex
+        let start = deck.index(end, offsetBy: -min(count, deck.count))
+        return Array(deck[start..<end])
+    }
 }
